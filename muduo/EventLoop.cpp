@@ -34,10 +34,10 @@ void EventLoop::loop() {
     isLooping = true;
     isQuited = false;
     while (!isQuited) {
-        activateChannels.clear();
-        poller->poll(kPollTimeMs, &activateChannels);
-        for (auto activateChannel: activateChannels) {
-            activateChannel->handleEvent();
+        activeChannels.clear();
+        poller->poll(kPollTimeMs, &activeChannels);
+        for (auto activeChannel: activeChannels) {
+            activeChannel->handleEvent();
         }
     }
     LOG_TRACE << "EventLoop " << this << " stop looping";

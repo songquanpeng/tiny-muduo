@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <cstdio>
 #include "Channel.h"
 #include <sys/timerfd.h>
 #include "EventLoop.h"
@@ -18,7 +18,7 @@ int main() {
     channel.setReadCallback(timeout);
     channel.enableReading();
 
-    struct itimerspec howLong;
+    struct itimerspec howLong{};
     bzero(&howLong, sizeof howLong);
     howLong.it_value.tv_sec = 5;
     timerfd_settime(timerfd, 0, &howLong, nullptr);

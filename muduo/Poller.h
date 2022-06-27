@@ -30,7 +30,7 @@ namespace muduo {
 
         /// Polls the I/O events.
         /// Must be called in the loop thread.
-        Timestamp poll(int timeoutMs, ChannelList* activateChannels);
+        Timestamp poll(int timeoutMs, ChannelList* activeChannels);
 
         /// Changes the interested I/O events.
         /// Must be called in the loop thread.
@@ -41,7 +41,7 @@ namespace muduo {
         }
 
     private:
-        void fillActivateChannels(int numEvents, ChannelList* activateChannels) const;
+        void fillActiveChannels(int numEvents, ChannelList* activeChannels) const;
 
         typedef std::vector<struct pollfd> PollFdList;
         typedef std::map<int, Channel*> ChannelMap;

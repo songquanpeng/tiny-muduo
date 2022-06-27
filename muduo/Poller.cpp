@@ -6,7 +6,7 @@
 #include "Channel.h"
 #include "logging/Logging.h"
 
-#include <assert.h>
+#include <cassert>
 #include <poll.h>
 
 using namespace muduo;
@@ -15,16 +15,14 @@ Poller::Poller(EventLoop *loop) : ownerEventLoop(loop) {
 
 }
 
-Poller::~Poller() {
+Poller::~Poller() = default;
 
-}
-
-Timestamp Poller::poll(int timeoutMs, Poller::ChannelList *activateChannels) {
+Timestamp Poller::poll(int timeoutMs, Poller::ChannelList *activeChannels) {
     int numEvents = ::poll(pollFdList.data(), pollFdList.size(), timeoutMs);
     Timestamp now(Timestamp::now());
     if (numEvents > 0) {
         LOG_TRACE << numEvents << " events happened";
-        fillActivateChannels(numEvents, activateChannels);
+        fillActiveChannels(numEvents, activeChannels);
     } else if (numEvents == 0) {
         LOG_TRACE << "nothing happened";
     } else {
@@ -34,16 +32,16 @@ Timestamp Poller::poll(int timeoutMs, Poller::ChannelList *activateChannels) {
 }
 
 
-void Poller::fillActivateChannels(int numEvents, Poller::ChannelList *activateChannels) const {
+void Poller::fillActiveChannels(int numEvents, Poller::ChannelList *activeChannels) const {
     for (auto iter = pollFdList.begin(); iter != pollFdList.end() && numEvents > 0; ++iter) {
-        if (iter->revents > 0) {
+        if (iter->revents > 0) {  // Which means this pfd is active
             --numEvents;
-            auto findIter = channelMap.find(iter->fd);
-            assert(findIter != channelMap.end());
-            Channel *channel = findIter->second;
+            auto targetIter = channelMap.find(iter->fd);
+            assert(targetIter != channelMap.end());
+            Channel *channel = targetIter->second;
             assert(channel->getFd() == iter->fd);
             channel->setRevents(iter->revents);
-            activateChannels->push_back(channel);
+            activeChannels->push_back(channel);
         }
     }
 }
@@ -70,7 +68,7 @@ void Poller::updateChannel(Channel *channel) {
         assert(0 <= idx && idx < (int)(pollFdList.size()));
         auto& pfd = pollFdList[idx];  // Notice this is a reference
         assert(pfd.fd == channel->getFd() || pfd.fd == -1);
-        pfd.events == (short)(channel->getEvents());
+        pfd.events = (short)(channel->getEvents());
         pfd.revents = 0;
         if (channel->isNoneEvent()) {
             // Ignore this pollfd

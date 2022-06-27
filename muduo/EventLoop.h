@@ -46,7 +46,7 @@ namespace muduo {
         bool isQuited;
         const pid_t threadId;
         boost::scoped_ptr<Poller> poller;
-        ChannelList activateChannels;
+        ChannelList activeChannels;
     };
 }
 

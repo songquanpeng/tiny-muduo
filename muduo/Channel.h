@@ -41,7 +41,7 @@ namespace muduo {
             return events;
         }
 
-        int setRevents(int revents) {
+        void setRevents(int revents) {
             this->revents = revents;
         }
 
