@@ -7,8 +7,14 @@
 
 
 #include "thread/Thread.h"
+#include <boost/scoped_ptr.hpp>
+#include <vector>
 
 namespace muduo {
+    class Channel;
+
+    class Poller;
+
     class EventLoop : boost::noncopyable {
     public:
         EventLoop();
@@ -16,6 +22,10 @@ namespace muduo {
         ~EventLoop();
 
         void loop();
+
+        void quit();
+
+        void updateChannel(Channel *channel);
 
         bool isInLoopThread() const {
             return threadId == CurrentThread::tid();
@@ -30,8 +40,13 @@ namespace muduo {
     private:
         void abortNotInLoopThread();
 
+        typedef std::vector<Channel *> ChannelList;
+
         bool isLooping;
+        bool isQuited;
         const pid_t threadId;
+        boost::scoped_ptr<Poller> poller;
+        ChannelList activateChannels;
     };
 }
 

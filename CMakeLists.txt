@@ -12,6 +12,7 @@ add_executable(server
         muduo/logging/LogStream.cc
         muduo/thread/Thread.cc
         muduo/datetime/Timestamp.cc
-)
+        muduo/Channel.cpp
+        muduo/Poller.cpp muduo/Poller.h)
 
 target_link_libraries(server pthread)
