@@ -13,6 +13,13 @@ add_executable(server
         muduo/thread/Thread.cc
         muduo/datetime/Timestamp.cc
         muduo/Channel.cpp
-        muduo/Poller.cpp muduo/Poller.h)
+        muduo/Poller.cpp
+        muduo/Poller.h
+        muduo/TimerQueue.cpp
+        muduo/TimerQueue.h
+        muduo/Timer.h
+        muduo/Timer.cpp
+        muduo/Callbacks.h
+        muduo/TimerId.h muduo/Timer.cpp)
 
 target_link_libraries(server pthread)

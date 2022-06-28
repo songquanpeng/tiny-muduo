@@ -6,6 +6,9 @@
 #define TINY_MUDUO_EVENTLOOP_H
 
 
+#include "datetime/Timestamp.h"
+#include "TimerId.h"
+#include "Callbacks.h"
 #include "thread/Thread.h"
 #include <boost/scoped_ptr.hpp>
 #include <vector>
@@ -14,6 +17,8 @@ namespace muduo {
     class Channel;
 
     class Poller;
+
+    class TimerQueue;
 
     class EventLoop : boost::noncopyable {
     public:
@@ -37,6 +42,21 @@ namespace muduo {
             }
         }
 
+        ///
+        /// Runs callback at 'time'.
+        ///
+        TimerId runAt(const Timestamp &time, const TimerCallback &cb);
+
+        ///
+        /// Runs callback after @c delay seconds.
+        ///
+        TimerId runAfter(double delay, const TimerCallback &cb);
+
+        ///
+        /// Runs callback every @c interval seconds.
+        ///
+        TimerId runEvery(double interval, const TimerCallback &cb);
+
     private:
         void abortNotInLoopThread();
 
@@ -45,7 +65,9 @@ namespace muduo {
         bool isLooping;
         bool isQuited;
         const pid_t threadId;
+        Timestamp pollReturnTime;
         boost::scoped_ptr<Poller> poller;
+        boost::scoped_ptr<TimerQueue> timerQueue;
         ChannelList activeChannels;
     };
 }

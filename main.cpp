@@ -1,27 +1,40 @@
-#include <cstdio>
-#include "Channel.h"
-#include <sys/timerfd.h>
+// copied from muduo/net/tests/TimerQueue_unittest.cc
+
 #include "EventLoop.h"
 
-muduo::EventLoop *globalLoop;
+#include <boost/bind.hpp>
 
-void timeout() {
-    printf("Timeout!");
-    globalLoop->quit();
+#include <cstdio>
+
+int cnt = 0;
+muduo::EventLoop *g_loop;
+
+void printTid() {
+    printf("pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
+    printf("now %s\n", muduo::Timestamp::now().toString().c_str());
+}
+
+void print(const char *msg) {
+    printf("msg %s %s\n", muduo::Timestamp::now().toString().c_str(), msg);
+    if (++cnt == 20) {
+        g_loop->quit();
+    }
 }
 
 int main() {
+    printTid();
     muduo::EventLoop loop;
-    globalLoop = &loop;
-    int timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
-    muduo::Channel channel(&loop, timerfd);
-    channel.setReadCallback(timeout);
-    channel.enableReading();
+    g_loop = &loop;
 
-    struct itimerspec howLong{};
-    bzero(&howLong, sizeof howLong);
-    howLong.it_value.tv_sec = 5;
-    timerfd_settime(timerfd, 0, &howLong, nullptr);
+    print("main");
+    loop.runAfter(1, boost::bind(print, "once1"));
+    loop.runAfter(1.5, boost::bind(print, "once1.5"));
+    loop.runAfter(2.5, boost::bind(print, "once2.5"));
+    loop.runAfter(3.5, boost::bind(print, "once3.5"));
+    loop.runEvery(2, boost::bind(print, "every2"));
+    loop.runEvery(3, boost::bind(print, "every3"));
+
     loop.loop();
-    return 0;
+    print("main loop exits");
+    sleep(1);
 }
