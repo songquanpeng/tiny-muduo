@@ -1,40 +1,39 @@
-// copied from muduo/net/tests/TimerQueue_unittest.cc
-
 #include "EventLoop.h"
+#include <stdio.h>
 
-#include <boost/bind.hpp>
-
-#include <cstdio>
-
-int cnt = 0;
 muduo::EventLoop *g_loop;
+int g_flag = 0;
 
-void printTid() {
-    printf("pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
-    printf("now %s\n", muduo::Timestamp::now().toString().c_str());
+void run4() {
+    printf("run4(): pid = %d, flag = %d\n", getpid(), g_flag);
+    g_loop->quit();
 }
 
-void print(const char *msg) {
-    printf("msg %s %s\n", muduo::Timestamp::now().toString().c_str(), msg);
-    if (++cnt == 20) {
-        g_loop->quit();
-    }
+void run3() {
+    printf("run3(): pid = %d, flag = %d\n", getpid(), g_flag);
+    g_loop->runAfter(3, run4);
+    g_flag = 3;
+}
+
+void run2() {
+    printf("run2(): pid = %d, flag = %d\n", getpid(), g_flag);
+    g_loop->queueInLoop(run3);
+}
+
+void run1() {
+    g_flag = 1;
+    printf("run1(): pid = %d, flag = %d\n", getpid(), g_flag);
+    g_loop->runInLoop(run2);
+    g_flag = 2;
 }
 
 int main() {
-    printTid();
+    printf("main(): pid = %d, flag = %d\n", getpid(), g_flag);
+
     muduo::EventLoop loop;
     g_loop = &loop;
 
-    print("main");
-    loop.runAfter(1, boost::bind(print, "once1"));
-    loop.runAfter(1.5, boost::bind(print, "once1.5"));
-    loop.runAfter(2.5, boost::bind(print, "once2.5"));
-    loop.runAfter(3.5, boost::bind(print, "once3.5"));
-    loop.runEvery(2, boost::bind(print, "every2"));
-    loop.runEvery(3, boost::bind(print, "every3"));
-
+    loop.runAfter(2, run1);
     loop.loop();
-    print("main loop exits");
-    sleep(1);
+    printf("main(): pid = %d, flag = %d\n", getpid(), g_flag);
 }

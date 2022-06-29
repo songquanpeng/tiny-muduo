@@ -18,6 +18,11 @@ Poller::Poller(EventLoop *loop) : ownerEventLoop(loop) {
 Poller::~Poller() = default;
 
 Timestamp Poller::poll(int timeoutMs, Poller::ChannelList *activeChannels) {
+    // https://man7.org/linux/man-pages/man2/poll.2.html
+    // The call will block until either:
+    // • a file descriptor becomes ready;
+    // • the call is interrupted by a signal handler; or
+    // • the timeout expires.
     int numEvents = ::poll(pollFdList.data(), pollFdList.size(), timeoutMs);
     Timestamp now(Timestamp::now());
     if (numEvents > 0) {

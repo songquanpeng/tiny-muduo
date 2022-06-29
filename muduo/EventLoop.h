@@ -10,6 +10,7 @@
 #include "TimerId.h"
 #include "Callbacks.h"
 #include "thread/Thread.h"
+#include "thread/Mutex.h"
 #include <boost/scoped_ptr.hpp>
 #include <vector>
 
@@ -42,6 +43,19 @@ namespace muduo {
             }
         }
 
+        typedef boost::function<void()> Functor;
+
+        /// Runs callback immediately in the loop thread.
+        /// It wakes up the loop, and run the cb.
+        /// If in the same loop thread, cb is run within the function.
+        /// Safe to call from other threads.
+        void runInLoop(const Functor& cb);
+        /// Queues callback in the loop thread.
+        /// Runs after finish pooling.
+        /// Safe to call from other threads.
+        void queueInLoop(const Functor& cb);
+        void wakeUp();
+
         ///
         /// Runs callback at 'time'.
         ///
@@ -59,6 +73,8 @@ namespace muduo {
 
     private:
         void abortNotInLoopThread();
+        void handleRead();  // waked up
+        void doPendingFunctors();
 
         typedef std::vector<Channel *> ChannelList;
 
@@ -69,6 +85,11 @@ namespace muduo {
         boost::scoped_ptr<Poller> poller;
         boost::scoped_ptr<TimerQueue> timerQueue;
         ChannelList activeChannels;
+        bool callingPendingFunctors;
+        int wakeupFd;
+        boost::scoped_ptr<Channel> wakeupChannel;
+        MutexLock mutex;
+        std::vector<Functor> pendingFunctors;
     };
 }
 
