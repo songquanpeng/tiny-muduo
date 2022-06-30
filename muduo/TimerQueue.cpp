@@ -76,14 +76,19 @@ TimerQueue::~TimerQueue() {
 
 TimerId TimerQueue::addTimer(const TimerCallback &cb, Timestamp when, double interval) {
     auto *timer = new Timer(cb, when, interval);
+    loop->runInLoop(boost::bind(&TimerQueue::addTimerInLoop, this, timer));
+    return TimerId(timer);
+}
+
+void TimerQueue::addTimerInLoop(Timer *timer) {
     loop->assertInLoopThread();
     bool earliestChanged = insert(timer);
 
     if (earliestChanged) {
         resetTimerfd(timerfd, timer->getExpirationTimestamp());
     }
-    return TimerId(timer);
 }
+
 
 void TimerQueue::handleRead() {
     loop->assertInLoopThread();

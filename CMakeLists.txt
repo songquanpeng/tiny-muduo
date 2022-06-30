@@ -20,6 +20,6 @@ add_executable(server
         muduo/Timer.h
         muduo/Timer.cpp
         muduo/Callbacks.h
-        muduo/TimerId.h muduo/Timer.cpp)
+        muduo/TimerId.h muduo/Timer.cpp muduo/EventLoopThread.cpp muduo/EventLoopThread.h)
 
 target_link_libraries(server pthread)
