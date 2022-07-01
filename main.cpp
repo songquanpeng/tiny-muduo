@@ -1,23 +1,55 @@
+#include "Acceptor.h"
 #include "EventLoop.h"
-#include "EventLoopThread.h"
-#include <stdio.h>
+#include "InetAddress.h"
+#include "SocketsOps.h"
+#include <cstdio>
 
-void runInThread() {
-    printf("runInThread(): pid = %d, tid = %d\n",
-           getpid(), muduo::CurrentThread::tid());
+void newConnection1(int sockfd, const muduo::InetAddress &peerAddr) {
+    printf("newConnection(): accepted a new connection from %s\n",
+           peerAddr.toHostPort().c_str());
+    char res[] = "HTTP/1.1 200 OK\n"
+                 "\n"
+                 "<html>\n"
+                 "<head><title>newConnection1</title></head>\n"
+                 "<body>\n"
+                 "<center><h1>newConnection1</h1></center>\n"
+                 "<hr><center>This is newConnection1!</center>\n"
+                 "</body>\n"
+                 "</html>";
+    ::write(sockfd, res, sizeof res);
+    muduo::sockets::close(sockfd);
+}
+
+void newConnection2(int sockfd, const muduo::InetAddress &peerAddr) {
+    printf("newConnection(): accepted a new connection from %s\n",
+           peerAddr.toHostPort().c_str());
+    char res[] = "HTTP/1.1 200 OK\n"
+                 "\n"
+                 "<html>\n"
+                 "<head><title>newConnection2</title></head>\n"
+                 "<body>\n"
+                 "<center><h1>newConnection2</h1></center>\n"
+                 "<hr><center>This is newConnection2!</center>\n"
+                 "</body>\n"
+                 "</html>";
+    ::write(sockfd, res, sizeof res);
+    muduo::sockets::close(sockfd);
 }
 
 int main() {
-    printf("main(): pid = %d, tid = %d\n",
-           getpid(), muduo::CurrentThread::tid());
+    printf("main(): pid = %d\n", getpid());
 
-    muduo::EventLoopThread loopThread;
-    muduo::EventLoop *loop = loopThread.startLoop();
-    loop->runInLoop(runInThread);
-    sleep(1);
-    loop->runEvery(1, runInThread);
-    sleep(4);
-    loop->quit();
+    muduo::InetAddress listenAddr1(3000);
+    muduo::InetAddress listenAddr2(3001);
+    muduo::EventLoop loop;
 
-    printf("exit main().\n");
+    muduo::Acceptor acceptor1(&loop, listenAddr1);
+    muduo::Acceptor acceptor2(&loop, listenAddr2);
+    acceptor1.setNewConnectionCallback(newConnection1);
+    acceptor1.listen();
+
+    acceptor2.setNewConnectionCallback(newConnection2);
+    acceptor2.listen();
+
+    loop.loop();
 }
