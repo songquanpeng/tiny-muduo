@@ -21,6 +21,8 @@ add_executable(server
         muduo/Acceptor.cpp
         muduo/Socket.cc
         muduo/SocketsOps.cc
-        muduo/InetAddress.cc)
+        muduo/InetAddress.cc
+        muduo/TcpServer.cpp
+        muduo/TcpConnection.cpp)
 
 target_link_libraries(server pthread)

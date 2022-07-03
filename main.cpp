@@ -1,55 +1,31 @@
-#include "Acceptor.h"
+#include "TcpServer.h"
 #include "EventLoop.h"
 #include "InetAddress.h"
-#include "SocketsOps.h"
 #include <cstdio>
 
-void newConnection1(int sockfd, const muduo::InetAddress &peerAddr) {
-    printf("newConnection(): accepted a new connection from %s\n",
-           peerAddr.toHostPort().c_str());
-    char res[] = "HTTP/1.1 200 OK\n"
-                 "\n"
-                 "<html>\n"
-                 "<head><title>newConnection1</title></head>\n"
-                 "<body>\n"
-                 "<center><h1>newConnection1</h1></center>\n"
-                 "<hr><center>This is newConnection1!</center>\n"
-                 "</body>\n"
-                 "</html>";
-    ::write(sockfd, res, sizeof res);
-    muduo::sockets::close(sockfd);
+void onConnection(const muduo::TcpConnectionPtr &conn) {
+    if (conn->isConnected()) {
+        printf("onConnection(): new connection [%s] from %s\n", conn->getName().c_str(),
+               conn->getPeerAddress().toHostPort().c_str());
+    } else {
+        printf("onConnection(): connection [%s] is down\n", conn->getName().c_str());
+    }
 }
 
-void newConnection2(int sockfd, const muduo::InetAddress &peerAddr) {
-    printf("newConnection(): accepted a new connection from %s\n",
-           peerAddr.toHostPort().c_str());
-    char res[] = "HTTP/1.1 200 OK\n"
-                 "\n"
-                 "<html>\n"
-                 "<head><title>newConnection2</title></head>\n"
-                 "<body>\n"
-                 "<center><h1>newConnection2</h1></center>\n"
-                 "<hr><center>This is newConnection2!</center>\n"
-                 "</body>\n"
-                 "</html>";
-    ::write(sockfd, res, sizeof res);
-    muduo::sockets::close(sockfd);
+void onMessage(const muduo::TcpConnectionPtr &conn, const char *data, ssize_t len) {
+    printf("onMessage(): received %zd bytes from connection [%s]\n", len, conn->getName().c_str());
 }
 
 int main() {
     printf("main(): pid = %d\n", getpid());
 
-    muduo::InetAddress listenAddr1(3000);
-    muduo::InetAddress listenAddr2(3001);
+    muduo::InetAddress listenAddr(9981);
     muduo::EventLoop loop;
 
-    muduo::Acceptor acceptor1(&loop, listenAddr1);
-    muduo::Acceptor acceptor2(&loop, listenAddr2);
-    acceptor1.setNewConnectionCallback(newConnection1);
-    acceptor1.listen();
-
-    acceptor2.setNewConnectionCallback(newConnection2);
-    acceptor2.listen();
+    muduo::TcpServer server(&loop, listenAddr);
+    server.setConnectionCallback(onConnection);
+    server.setMessageCallback(onMessage);
+    server.start();
 
     loop.loop();
 }
