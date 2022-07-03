@@ -5,8 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 include_directories(muduo)
 
-add_executable(server
-        main.cpp
+set(SOURCES
         muduo/EventLoop.cpp
         muduo/logging/Logging.cc
         muduo/logging/LogStream.cc
@@ -25,4 +24,19 @@ add_executable(server
         muduo/TcpServer.cpp
         muduo/TcpConnection.cpp)
 
-target_link_libraries(server pthread)
+add_executable(test1 test1.cpp ${SOURCES})
+target_link_libraries(test1 pthread)
+add_executable(test2 test2.cpp ${SOURCES})
+target_link_libraries(test2 pthread)
+add_executable(test3 test3.cpp ${SOURCES})
+target_link_libraries(test3 pthread)
+add_executable(test4 test4.cpp ${SOURCES})
+target_link_libraries(test4 pthread)
+add_executable(test5 test5.cpp ${SOURCES})
+target_link_libraries(test5 pthread)
+add_executable(test6 test6.cpp ${SOURCES})
+target_link_libraries(test6 pthread)
+add_executable(test7 test7.cpp ${SOURCES})
+target_link_libraries(test7 pthread)
+add_executable(test8 test8.cpp ${SOURCES})
+target_link_libraries(test8 pthread)
