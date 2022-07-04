@@ -50,5 +50,17 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     connectionMap[connName] = conn;
     conn->setConnectionCallback(connectionCallback);
     conn->setMessageCallback(messageCallback);
+    conn->setCloseCallback(boost::bind(&TcpServer::removeConnection, this, _1));
     conn->connectEstablished();
+}
+
+void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
+    loop->assertInLoopThread();
+    LOG_INFO << "TcpServer::removeConnection [" << name << "] - connection " << conn->getName();
+    auto n = connectionMap.erase(conn->getName());
+    assert(n == 1);
+    (void) n; // ???
+    // queueInLoop() is necessary.
+    // P311
+    loop->queueInLoop(boost::bind(&TcpConnection::connectDestroyed, conn));
 }

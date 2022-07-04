@@ -62,6 +62,8 @@ namespace muduo {
 
         struct sockaddr_in getLocalAddr(int sockfd);
 
+        int getSocketError(int sockfd);
+
     }
 }
 

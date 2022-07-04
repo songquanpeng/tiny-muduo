@@ -58,14 +58,22 @@ namespace muduo {
             messageCallback = cb;
         }
 
+        void setCloseCallback(const CloseCallback &cb) {
+            closeCallback = cb;
+        }
+
         /// Internal use only.
         /// called when TcpServer accepts a new connection
         /// should be called only once
         void connectEstablished();
 
+        /// called when TcpServer has removed this connection from its map
+        /// should be called only once
+        void connectDestroyed();
+
     private:
         enum StateE {
-            kConnecting, kConnected
+            kConnecting, kConnected, kDisconnected
         };
 
         void setState(StateE s) {
@@ -73,6 +81,9 @@ namespace muduo {
         }
 
         void handleRead();
+        void handleWrite();
+        void handleClose();
+        void handleError();
 
         EventLoop *loop;
         std::string name;
@@ -84,6 +95,7 @@ namespace muduo {
         InetAddress peerAddr;
         ConnectionCallback connectionCallback;
         MessageCallback messageCallback;
+        CloseCallback closeCallback;
     };
 }
 

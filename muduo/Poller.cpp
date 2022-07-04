@@ -59,10 +59,10 @@ void Poller::updateChannel(Channel *channel) {
         assert(channelMap.find(channel->getFd()) == channelMap.end());
         struct pollfd pfd{};
         pfd.fd = channel->getFd();
-        pfd.events = (short)(channel->getEvents());
+        pfd.events = (short) (channel->getEvents());
         pfd.revents = 0;
         pollFdList.push_back(pfd);
-        int idx = (int)(pollFdList.size()) - 1;
+        int idx = (int) (pollFdList.size()) - 1;
         channel->setIndex(idx);
         channelMap[pfd.fd] = channel;
     } else {
@@ -70,16 +70,45 @@ void Poller::updateChannel(Channel *channel) {
         assert(channelMap.find(channel->getFd()) != channelMap.end());
         assert(channelMap[channel->getFd()] == channel);
         int idx = channel->getIndex();
-        assert(0 <= idx && idx < (int)(pollFdList.size()));
-        auto& pfd = pollFdList[idx];  // Notice this is a reference
-        assert(pfd.fd == channel->getFd() || pfd.fd == -1);
-        pfd.events = (short)(channel->getEvents());
+        assert(0 <= idx && idx < (int) (pollFdList.size()));
+        auto &pfd = pollFdList[idx];  // Notice this is a reference
+        assert(pfd.fd == channel->getFd() || pfd.fd == -channel->getFd() - 1);  // consistent or ignored
+        pfd.events = (short) (channel->getEvents());
         pfd.revents = 0;
         if (channel->isNoneEvent()) {
             // Ignore this pollfd
-            pfd.fd = -1;
+            pfd.fd = -channel->getFd() - 1;  // we ignore a fd by make it negative. Because fd can be 0, we have to -1.
         }
     }
+}
+
+void Poller::removeChannel(Channel *channel) {
+    assertInLoopThread();
+    LOG_TRACE << "fd = " << channel->getFd();
+    assert(channelMap.find(channel->getFd()) != channelMap.end());
+    assert(channelMap[channel->getFd()] == channel);
+    assert(channel->isNoneEvent());
+    int idx = channel->getIndex();
+    assert(0 <= idx && idx < (int) pollFdList.size());
+    const struct pollfd &pfd = pollFdList[idx];
+    (void) pfd;  // ??
+    assert(pfd.fd == -channel->getFd() - 1 && pfd.events == channel->getEvents());
+    auto n = channelMap.erase(channel->getFd());
+    assert(n == 1);
+    (void) n;
+    if (implicit_cast<size_t>(idx) == pollFdList.size() - 1) {
+        // already the last one
+        pollFdList.pop_back();
+    } else {
+        int channelAtEnd = pollFdList.back().fd;
+        std::iter_swap(pollFdList.begin() + idx, pollFdList.end() - 1);
+        if (channelAtEnd < 0) {
+            channelAtEnd = -channelAtEnd - 1;  // this is because channelAtEnd is not the real fd. Check line 80
+        }
+        channelMap[channelAtEnd]->setIndex(idx);
+        pollFdList.pop_back();
+    }
+
 }
 
 

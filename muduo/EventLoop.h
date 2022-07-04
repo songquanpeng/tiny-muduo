@@ -32,6 +32,7 @@ namespace muduo {
         void quit();
 
         void updateChannel(Channel *channel);
+        void removeChannel(Channel *channel);
 
         bool isInLoopThread() const {
             return threadId == CurrentThread::tid();

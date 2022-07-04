@@ -16,6 +16,7 @@ namespace muduo {
         typedef boost::function<void()> EventCallback;
 
         Channel(EventLoop *loop, int fd);
+        ~Channel();
 
         // Will be called by EventLoop::loop()
         // Call different user callback according to the value of revents
@@ -31,6 +32,10 @@ namespace muduo {
 
         void setErrorCallback(const EventCallback &cb) {
             errorCallback = cb;
+        }
+
+        void setCloseCallback(const EventCallback &cb) {
+            closeCallback = cb;
         }
 
         int getFd() const {
@@ -51,6 +56,11 @@ namespace muduo {
 
         void enableReading() {
             events |= kReadEvent;
+            update();
+        }
+
+        void disableAll() {
+            events = kNoneEvent;
             update();
         }
 
@@ -77,7 +87,9 @@ namespace muduo {
         EventCallback readCallback;
         EventCallback writeCallback;
         EventCallback errorCallback;
+        EventCallback closeCallback;
 
+        bool eventHandling;
 
         EventLoop *ownerLoop;
         const int fd;
