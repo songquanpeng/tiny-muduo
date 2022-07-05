@@ -8,21 +8,24 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 
+#include <datetime/Timestamp.h>
+
 namespace muduo {
     class EventLoop;
 
     class Channel : boost::noncopyable {
     public:
         typedef boost::function<void()> EventCallback;
+        typedef boost::function<void(Timestamp)> ReadEventCallback;
 
         Channel(EventLoop *loop, int fd);
         ~Channel();
 
         // Will be called by EventLoop::loop()
         // Call different user callback according to the value of revents
-        void handleEvent();
+        void handleEvent(Timestamp recevieTime);
 
-        void setReadCallback(const EventCallback &cb) {
+        void setReadCallback(const ReadEventCallback &cb) {
             readCallback = cb;
         }
 
@@ -84,7 +87,7 @@ namespace muduo {
         static const int kReadEvent;
         static const int kWriteEvent;
 
-        EventCallback readCallback;
+        ReadEventCallback readCallback;
         EventCallback writeCallback;
         EventCallback errorCallback;
         EventCallback closeCallback;

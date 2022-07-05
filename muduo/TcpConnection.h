@@ -8,6 +8,7 @@
 
 #include "Callbacks.h"
 #include "InetAddress.h"
+#include "Buffer.h"
 
 #include <boost/any.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -80,9 +81,12 @@ namespace muduo {
             state = s;
         }
 
-        void handleRead();
+        void handleRead(Timestamp receiveTime);
+
         void handleWrite();
+
         void handleClose();
+
         void handleError();
 
         EventLoop *loop;
@@ -96,6 +100,7 @@ namespace muduo {
         ConnectionCallback connectionCallback;
         MessageCallback messageCallback;
         CloseCallback closeCallback;
+        Buffer inputBuffer;
     };
 }
 

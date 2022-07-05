@@ -28,7 +28,7 @@ TcpConnection::TcpConnection(EventLoop *loop, const string &name, int sockfd, co
         localAddr(localAddr),
         peerAddr(peerAddr) {
     LOG_DEBUG << "TcpConnection::ctor[" << name << "] at " << this << " fd=" << sockfd;
-    channel->setReadCallback(boost::bind(&TcpConnection::handleRead, this));
+    channel->setReadCallback(boost::bind(&TcpConnection::handleRead, this, _1));
     channel->setWriteCallback(boost::bind(&TcpConnection::handleWrite, this));
     channel->setCloseCallback(boost::bind(&TcpConnection::handleClose, this));
     channel->setErrorCallback(boost::bind(&TcpConnection::handleError, this));
@@ -47,14 +47,16 @@ void TcpConnection::connectEstablished() {
     connectionCallback(shared_from_this());
 }
 
-void TcpConnection::handleRead() {
-    char buf[65536];
-    ssize_t n = read(channel->getFd(), buf, sizeof buf);
+void TcpConnection::handleRead(Timestamp receiveTime) {
+    int saveErrno = 0;
+    ssize_t n = inputBuffer.readFd(channel->getFd(), &saveErrno);
     if (n > 0) {
-        messageCallback(shared_from_this(), buf, n);
+        messageCallback(shared_from_this(), &inputBuffer, receiveTime);
     } else if (n == 0) {
         handleClose();
     }  else {
+        errno = saveErrno;
+        LOG_SYSERR << "TcpConnection::handleRead";
         handleError();
     }
 }

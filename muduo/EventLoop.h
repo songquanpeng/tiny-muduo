@@ -31,6 +31,8 @@ namespace muduo {
 
         void quit();
 
+        Timestamp getPollReturnTime() const { return pollReturnTime; }
+
         void updateChannel(Channel *channel);
         void removeChannel(Channel *channel);
 
