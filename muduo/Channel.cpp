@@ -12,6 +12,7 @@ using namespace muduo;
 
 const int Channel::kNoneEvent = 0;
 const int Channel::kReadEvent = POLLIN | POLLPRI;
+const int Channel::kWriteEvent = POLLOUT;
 
 Channel::Channel(EventLoop *loop, int fd) : ownerLoop(loop), fd(fd), events(0), revents(0), index(-1), eventHandling(
         false) {
@@ -26,7 +27,7 @@ void Channel::update() {
     ownerLoop->updateChannel(this);
 }
 
-void Channel::handleEvent(Timestamp receiveTime) {
+void Channel::handleEvent(Timestamp receiveTimestamp) {
     eventHandling = true;
     if (revents & POLLNVAL) {
         LOG_WARN << "Channel::handleEvent() POLLNVAL";
@@ -40,7 +41,7 @@ void Channel::handleEvent(Timestamp receiveTime) {
     }
 
     if (revents & (POLLIN | POLLPRI | POLLRDHUP)) {
-        if (readCallback) readCallback(receiveTime);
+        if (readCallback) readCallback(receiveTimestamp);
     }
 
     if (revents & POLLOUT) {

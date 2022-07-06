@@ -63,6 +63,12 @@ namespace muduo {
             closeCallback = cb;
         }
 
+        // Thread safe
+        void send(const std::string &message);
+
+        // Thread safe
+        void shutdown();
+
         /// Internal use only.
         /// called when TcpServer accepts a new connection
         /// should be called only once
@@ -74,7 +80,7 @@ namespace muduo {
 
     private:
         enum StateE {
-            kConnecting, kConnected, kDisconnected
+            kConnecting, kConnected, kDisconnecting, kDisconnected
         };
 
         void setState(StateE s) {
@@ -89,6 +95,10 @@ namespace muduo {
 
         void handleError();
 
+        void sendInLoop(const std::string &message);
+
+        void shutdownInLoop();
+
         EventLoop *loop;
         std::string name;
 
@@ -101,6 +111,7 @@ namespace muduo {
         MessageCallback messageCallback;
         CloseCallback closeCallback;
         Buffer inputBuffer;
+        Buffer outputBuffer;
     };
 }
 

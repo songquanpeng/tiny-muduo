@@ -13,46 +13,46 @@
 
 #include <boost/noncopyable.hpp>
 
-namespace muduo
-{
+namespace muduo {
 
-class InetAddress;
+    class InetAddress;
 
 ///
 /// Wrapper of socket file descriptor.
 ///
 /// It closes the sockfd when desctructs.
 /// It's thread safe, all operations are delagated to OS.
-class Socket : boost::noncopyable
-{
- public:
-  explicit Socket(int sockfd)
-    : sockfd_(sockfd)
-  { }
+    class Socket : boost::noncopyable {
+    public:
+        explicit Socket(int sockfd)
+                : sockfd_(sockfd) {}
 
-  ~Socket();
+        ~Socket();
 
-  int fd() const { return sockfd_; }
+        int fd() const { return sockfd_; }
 
-  /// abort if address in use
-  void bindAddress(const InetAddress& localaddr);
-  /// abort if address in use
-  void listen();
+        /// abort if address in use
+        void bindAddress(const InetAddress &localaddr);
 
-  /// On success, returns a non-negative integer that is
-  /// a descriptor for the accepted socket, which has been
-  /// set to non-blocking and close-on-exec. *peeraddr is assigned.
-  /// On error, -1 is returned, and *peeraddr is untouched.
-  int accept(InetAddress* peeraddr);
+        /// abort if address in use
+        void listen();
 
-  ///
-  /// Enable/disable SO_REUSEADDR
-  ///
-  void setReuseAddr(bool on);
+        /// On success, returns a non-negative integer that is
+        /// a descriptor for the accepted socket, which has been
+        /// set to non-blocking and close-on-exec. *peeraddr is assigned.
+        /// On error, -1 is returned, and *peeraddr is untouched.
+        int accept(InetAddress *peeraddr);
 
- private:
-  const int sockfd_;
-};
+        ///
+        /// Enable/disable SO_REUSEADDR
+        ///
+        void setReuseAddr(bool on);
+
+        void shutdownWrite();
+
+    private:
+        const int sockfd_;
+    };
 
 }
 #endif  // MUDUO_NET_SOCKET_H

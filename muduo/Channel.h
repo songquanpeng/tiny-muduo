@@ -23,7 +23,7 @@ namespace muduo {
 
         // Will be called by EventLoop::loop()
         // Call different user callback according to the value of revents
-        void handleEvent(Timestamp recevieTime);
+        void handleEvent(Timestamp receiveTimestamp);
 
         void setReadCallback(const ReadEventCallback &cb) {
             readCallback = cb;
@@ -62,9 +62,23 @@ namespace muduo {
             update();
         }
 
+        void enableWriting() {
+            events |= kWriteEvent;
+            update();
+        }
+
+        void disableWriting() {
+            events &= ~kWriteEvent;
+            update();
+        }
+
         void disableAll() {
             events = kNoneEvent;
             update();
+        }
+
+        bool isWriting() const {
+            return events & kWriteEvent;
         }
 
         void setIndex(int idx) {

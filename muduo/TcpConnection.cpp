@@ -54,20 +54,41 @@ void TcpConnection::handleRead(Timestamp receiveTime) {
         messageCallback(shared_from_this(), &inputBuffer, receiveTime);
     } else if (n == 0) {
         handleClose();
-    }  else {
+    } else {
         errno = saveErrno;
         LOG_SYSERR << "TcpConnection::handleRead";
         handleError();
     }
 }
 
+// TODO: p319
 void TcpConnection::handleWrite() {
-
+    loop->assertInLoopThread();
+    if (channel->isWriting()) {
+        auto n = write(channel->getFd(), outputBuffer.peek(), outputBuffer.readableBytes());
+        if (n > 0) {
+            outputBuffer.retrieve(n);
+            if (outputBuffer.readableBytes() == 0) {
+                channel->disableWriting();
+                if (state == kDisconnecting) {
+                    shutdownInLoop();
+                }
+            } else {
+                LOG_TRACE << "Going to write more data";
+            }
+        } else {
+            LOG_SYSERR << "TcpConnection::handleWrite";
+        }
+    } else {
+        LOG_TRACE << "Connection is down, writing no more";
+    }
 }
 
 void TcpConnection::handleClose() {
     loop->assertInLoopThread();
     LOG_TRACE << "TcpConnection::handleClose state = " << state;
+    // TODO: why those two states?
+    assert(state == kConnected || state == kDisconnecting);
     // let the dtor to close fd
     channel->disableAll();
     // must be the last line!
@@ -81,10 +102,66 @@ void TcpConnection::handleError() {
 
 void TcpConnection::connectDestroyed() {
     loop->assertInLoopThread();
-    assert(state == kConnected);
+    // TODO: why those two states?
+    assert(state == kConnected || state == kDisconnecting);
     setState(kDisconnected);
     channel->disableAll();
     connectionCallback(shared_from_this());
     loop->removeChannel(boost::get_pointer(channel));
+}
+
+void TcpConnection::send(const string &message) {
+    if (state == kConnected) {
+        if (loop->isInLoopThread()) {
+            sendInLoop(message);
+        } else {
+            loop->runInLoop(boost::bind(&TcpConnection::sendInLoop, this, message));
+        }
+    }
+}
+
+// TODO: p318
+void TcpConnection::sendInLoop(const string &message) {
+    loop->assertInLoopThread();
+    ssize_t nwrote = 0;
+    // In nothing left in the output queue, try writing directly
+    // TODO: why? P318
+    if (!channel->isWriting() && outputBuffer.readableBytes() == 0) {
+        nwrote = write(channel->getFd(), message.data(), message.size());
+        if (nwrote >= 0) {
+            if (implicit_cast<size_t>(nwrote) < message.size()) {
+                LOG_TRACE << "Going to write more data";
+            }
+        } else {
+            nwrote = 0;
+            if (errno != EWOULDBLOCK) {
+                LOG_SYSERR << "TcpConnection::sendInLoop";
+            }
+        }
+    }
+
+    assert(nwrote >= 0);
+    if (implicit_cast<size_t>(nwrote) < message.size()) {
+        outputBuffer.append(message.data() + nwrote, message.size() - nwrote);
+        if (!channel->isWriting()) {
+            channel->enableWriting();
+        }
+    }
+}
+
+void TcpConnection::shutdown() {
+    // FIXME: use compare & swap
+    if (state == kConnected) {
+        setState(kDisconnecting);
+        loop->runInLoop(boost::bind(&TcpConnection::shutdownInLoop, this));
+    }
+}
+
+
+void TcpConnection::shutdownInLoop() {
+    loop->assertInLoopThread();
+    if (!channel->isWriting()) {
+        socket->shutdownWrite();
+    }
 }
 
