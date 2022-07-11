@@ -58,6 +58,6 @@ void Socket::setTcpNoDelay(bool on) {
 
 void Socket::setKeepAlive(bool on) {
     int optval = on ? 1 : 0;
-    ::setsockopt(sockfd_, IPPROTO_TCP, SO_KEEPALIVE, &optval, sizeof optval)
+    ::setsockopt(sockfd_, IPPROTO_TCP, SO_KEEPALIVE, &optval, sizeof optval);
 }
 
