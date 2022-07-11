@@ -165,3 +165,11 @@ void TcpConnection::shutdownInLoop() {
     }
 }
 
+void TcpConnection::setTcpNoDelay(bool on) {
+    socket->setTcpNoDelay(on);
+}
+
+void TcpConnection::setTcpKeepAlive(bool on) {
+    socket->setKeepAlive(on);
+}
+

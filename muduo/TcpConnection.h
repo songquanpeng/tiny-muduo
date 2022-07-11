@@ -78,6 +78,9 @@ namespace muduo {
         /// should be called only once
         void connectDestroyed();
 
+        void setTcpNoDelay(bool on);
+        void setTcpKeepAlive(bool on);
+
     private:
         enum StateE {
             kConnecting, kConnected, kDisconnecting, kDisconnected
