@@ -12,6 +12,7 @@
 #include <poll.h>
 #include <sys/eventfd.h>
 #include <boost/bind.hpp>
+#include <signal.h>
 
 using namespace muduo;
 
@@ -26,6 +27,15 @@ static int createEventfd() {
     }
     return evtfd;
 }
+
+class IgnoreSigPipe {
+public:
+    IgnoreSigPipe() {
+        ::signal(SIGPIPE, SIG_IGN);  // In case the client close the connection when we are still writing.
+    }
+};
+
+IgnoreSigPipe ignoreSigPipe;
 
 EventLoop::EventLoop() :
         isLooping(false),
