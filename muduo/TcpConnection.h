@@ -63,6 +63,15 @@ namespace muduo {
             closeCallback = cb;
         }
 
+        void setWriteCompleteCallback(const WriteCompleteCallback &cb) {
+            writeCompleteCallback = cb;
+        }
+
+        void setHighWaterLevelCallback(const HighWaterLevelCallback &cb, size_t h) {
+            highWaterLevelCallback = cb;
+            highWaterLevel = h;
+        }
+
         // Thread safe
         void send(const std::string &message);
 
@@ -113,6 +122,9 @@ namespace muduo {
         ConnectionCallback connectionCallback;
         MessageCallback messageCallback;
         CloseCallback closeCallback;
+        WriteCompleteCallback writeCompleteCallback;
+        HighWaterLevelCallback highWaterLevelCallback;
+        size_t highWaterLevel;
         Buffer inputBuffer;
         Buffer outputBuffer;
     };

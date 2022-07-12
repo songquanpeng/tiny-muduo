@@ -42,6 +42,14 @@ namespace muduo {
             messageCallback = cb;
         }
 
+        void setWriteCompleteCallback(const WriteCompleteCallback &cb) {
+            writeCompleteCallback = cb;
+        }
+
+        void setHighWaterLevelCallback(const HighWaterLevelCallback &cb) {
+            highWaterLevelCallback = cb;
+        }
+
     private:
         void newConnection(int sockfd, const InetAddress& peerAddr);
         void removeConnection(const TcpConnectionPtr& conn);
@@ -52,6 +60,8 @@ namespace muduo {
 
         ConnectionCallback connectionCallback;
         MessageCallback messageCallback;
+        WriteCompleteCallback writeCompleteCallback;
+        HighWaterLevelCallback highWaterLevelCallback;
 
         bool started;
         int nextConnId;

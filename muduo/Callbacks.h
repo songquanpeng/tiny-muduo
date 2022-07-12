@@ -20,6 +20,8 @@ namespace muduo {
     typedef boost::function<void(const TcpConnectionPtr &)> ConnectionCallback;
     typedef boost::function<void(const TcpConnectionPtr &, Buffer* buf, Timestamp)> MessageCallback;
     typedef boost::function<void (const TcpConnectionPtr&)> CloseCallback;
+    typedef boost::function<void (const TcpConnectionPtr&)> WriteCompleteCallback;
+    typedef std::function<void (const TcpConnectionPtr&, size_t)> HighWaterLevelCallback;
 }
 
 #endif //TINY_MUDUO_CALLBACKS_H

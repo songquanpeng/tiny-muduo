@@ -51,6 +51,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     conn->setConnectionCallback(connectionCallback);
     conn->setMessageCallback(messageCallback);
     conn->setCloseCallback(boost::bind(&TcpServer::removeConnection, this, _1));
+    conn->setWriteCompleteCallback(writeCompleteCallback);
     conn->connectEstablished();
 }
 

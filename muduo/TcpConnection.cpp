@@ -70,6 +70,9 @@ void TcpConnection::handleWrite() {
             outputBuffer.retrieve(n);
             if (outputBuffer.readableBytes() == 0) {
                 channel->disableWriting();
+                if (writeCompleteCallback) {
+                    loop->queueInLoop(boost::bind(writeCompleteCallback, shared_from_this()));
+                }
                 if (state == kDisconnecting) {
                     shutdownInLoop();
                 }
@@ -131,6 +134,10 @@ void TcpConnection::sendInLoop(const string &message) {
         if (nwrote >= 0) {
             if (implicit_cast<size_t>(nwrote) < message.size()) {
                 LOG_TRACE << "Going to write more data";
+            } else {
+                if (writeCompleteCallback) {
+                    loop->queueInLoop(boost::bind(writeCompleteCallback, shared_from_this()));
+                }
             }
         } else {
             nwrote = 0;
@@ -142,6 +149,8 @@ void TcpConnection::sendInLoop(const string &message) {
 
     assert(nwrote >= 0);
     if (implicit_cast<size_t>(nwrote) < message.size()) {
+        size_t oldLen = outputBuffer.readableBytes();
+        // TODO: finish highWaterLevelCallback
         outputBuffer.append(message.data() + nwrote, message.size() - nwrote);
         if (!channel->isWriting()) {
             channel->enableWriting();
