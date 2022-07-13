@@ -52,6 +52,9 @@ int main() {
     server.setConnectionCallback(onConnection);
     server.setMessageCallback(onMessage);
     server.setWriteCompleteCallback(onWriteComplete);
+
+    server.setThreadNum(4);
+
     server.start();
 
     loop.loop();

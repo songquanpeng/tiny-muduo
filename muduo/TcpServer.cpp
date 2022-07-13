@@ -7,6 +7,7 @@
 #include "Acceptor.h"
 #include "EventLoop.h"
 #include "SocketsOps.h"
+#include "EventLoopThreadPool.h"
 
 #include <boost/bind.hpp>
 
@@ -18,6 +19,7 @@ TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr)
         : loop(CHECK_NOTNULL(loop)),
           name(listenAddr.toHostPort()),
           acceptor(new Acceptor(loop, listenAddr)),
+          threadPool(new EventLoopThreadPool(loop)),
           started(false),
           nextConnId(1) {
     acceptor->setNewConnectionCallback(boost::bind(&TcpServer::newConnection, this, _1, _2));
@@ -44,24 +46,39 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     LOG_INFO << "TcpServer::newConnection [" << name << "] - new connection [" << connName << "] from "
              << peerAddr.toHostPort();
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
+    EventLoop* ioLoop = threadPool->getNextLoop();
     // FIXME poll with zero timeout to double confirm the new connection
     TcpConnectionPtr conn(
-            new ::TcpConnection(loop, connName, sockfd, localAddr, peerAddr));  // TODO: try to use make_new
+            new ::TcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr));  // TODO: try to use make_new
     connectionMap[connName] = conn;
     conn->setConnectionCallback(connectionCallback);
     conn->setMessageCallback(messageCallback);
     conn->setCloseCallback(boost::bind(&TcpServer::removeConnection, this, _1));
     conn->setWriteCompleteCallback(writeCompleteCallback);
-    conn->connectEstablished();
+    // conn->connectEstablished();  // Use next line instead.
+    ioLoop->runInLoop(boost::bind(&TcpConnection::connectEstablished, conn));
 }
 
 void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
+    // P326
+    // Go to the main loop, otherwise we will need lock
+    loop->runInLoop(boost::bind(&TcpServer::removeConnectionInLoop, this, conn));
+}
+
+void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
     loop->assertInLoopThread();
-    LOG_INFO << "TcpServer::removeConnection [" << name << "] - connection " << conn->getName();
+    LOG_INFO << "TcpServer::removeConnectionInLoop [" << name << "] - connection " << conn->getName();
     auto n = connectionMap.erase(conn->getName());
     assert(n == 1);
     (void) n; // ???
+    // Move back to conn's own loop. It's good for client code's convenience.
+    EventLoop* ioLoop =  conn->getLoop();
     // queueInLoop() is necessary.
     // P311
-    loop->queueInLoop(boost::bind(&TcpConnection::connectDestroyed, conn));
+    ioLoop->queueInLoop(boost::bind(&TcpConnection::connectDestroyed, conn));
+}
+
+void TcpServer::setThreadNum(int numThreads) {
+    assert(numThreads >= 0);
+    threadPool->setThreadNum(numThreads);
 }

@@ -23,7 +23,8 @@ set(SOURCES
         muduo/InetAddress.cc
         muduo/TcpServer.cpp
         muduo/TcpConnection.cpp
-        muduo/Buffer.cpp)
+        muduo/Buffer.cpp
+        muduo/EventLoopThreadPool.cpp)
 
 add_executable(test1 test1.cpp ${SOURCES})
 target_link_libraries(test1 pthread)

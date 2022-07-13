@@ -18,6 +18,8 @@ namespace muduo {
 
     class Acceptor;
 
+    class EventLoopThreadPool;
+
     class TcpServer : boost::noncopyable {
     public:
         TcpServer(EventLoop *loop, const InetAddress &listenAddr);
@@ -50,13 +52,17 @@ namespace muduo {
             highWaterLevelCallback = cb;
         }
 
+        void setThreadNum(int numThreads);
+
     private:
         void newConnection(int sockfd, const InetAddress& peerAddr);
         void removeConnection(const TcpConnectionPtr& conn);
+        void removeConnectionInLoop(const TcpConnectionPtr& conn);
         typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
         EventLoop* loop;
         const std::string name;
         boost::scoped_ptr<Acceptor> acceptor;
+        boost::scoped_ptr<EventLoopThreadPool> threadPool;
 
         ConnectionCallback connectionCallback;
         MessageCallback messageCallback;
