@@ -5,8 +5,8 @@
 
 muduo::EventLoop *globalLoop;
 
-void timeout() {
-    printf("Timeout!");
+void timeout(muduo::Timestamp receiveTime) {
+    printf("%s Timeout!\n", receiveTime.toFormattedString().c_str());
     globalLoop->quit();
 }
 
