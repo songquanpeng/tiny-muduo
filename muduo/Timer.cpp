@@ -6,6 +6,8 @@
 
 using namespace muduo;
 
+AtomicInt64 Timer::s_numCreated;
+
 void Timer::restart(Timestamp now) {
     if (repeat) {
         expirationTimestamp = addTime(now, interval);

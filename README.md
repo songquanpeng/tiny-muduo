@@ -70,7 +70,7 @@ sequenceDiagram
     TcpServer->>TcpServer: newConnection()
     TcpServer->>EventLoopThreadPool: call getNextLoop()
     EventLoopThreadPool-->>TcpServer: return ioLoop
-    TcpServer-->>TcpConnection: call init(ioLoop, connfd, peerAddr)
+    TcpServer->>TcpConnection: call init(ioLoop, connfd, peerAddr)
     TcpConnection->>Socket: call init(connfd)
     TcpConnection->>Channel: call init(ioLoop, connfd)
     TcpServer->>TcpConnection: call set*Callback

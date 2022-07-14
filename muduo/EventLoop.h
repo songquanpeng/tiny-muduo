@@ -74,6 +74,8 @@ namespace muduo {
         ///
         TimerId runEvery(double interval, const TimerCallback &cb);
 
+        void cancel(TimerId timerId);
+
     private:
         void abortNotInLoopThread();
         void handleRead();  // waked up

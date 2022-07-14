@@ -46,6 +46,8 @@ namespace muduo {
 /// abort if any error.
         int createNonblockingOrDie();
 
+        int connect(int sockfd, const struct sockaddr_in &addr);
+
         void bindOrDie(int sockfd, const struct sockaddr_in &addr);
 
         void listenOrDie(int sockfd);
@@ -64,7 +66,11 @@ namespace muduo {
 
         struct sockaddr_in getLocalAddr(int sockfd);
 
+        struct sockaddr_in getPeerAddr(int sockfd);
+
         int getSocketError(int sockfd);
+
+        bool isSelfConnect(int sockfd);
 
     }
 }

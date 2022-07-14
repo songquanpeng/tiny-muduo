@@ -8,6 +8,7 @@
 #include "Timer.h"
 #include "TimerId.h"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <sys/timerfd.h>
 
@@ -60,7 +61,8 @@ using namespace muduo;
 using namespace muduo::detail;
 
 TimerQueue::TimerQueue(EventLoop *loop)
-        : loop(loop), timerfd(createTimerfd()), timerfdChannel(loop, timerfd), timerList() {
+        : loop(loop), timerfd(createTimerfd()), timerfdChannel(loop, timerfd), timerList(),
+          callingExpiredTimers(false) {
     timerfdChannel.setReadCallback(boost::bind(&TimerQueue::handleRead, this));
     timerfdChannel.enableReading();
 }
@@ -69,7 +71,7 @@ TimerQueue::~TimerQueue() {
     ::close(timerfd);
     // do not remove channel, since we're in EventLoop::dtor();
 
-    for (const auto & it : timerList) {
+    for (const auto &it: timerList) {
         delete it.second;
     }
 }
@@ -96,16 +98,20 @@ void TimerQueue::handleRead() {
     readTimerfd(timerfd, now);
 
     std::vector<Entry> expired = getExpired(now);
+    callingExpiredTimers = true;
+    cancelingTimerSet.clear();
 
     // safe to callback outside critical section
     for (auto &it: expired) {
         it.second->run();
     }
+    callingExpiredTimers = false;
 
     reset(expired, now);
 }
 
 std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now) {
+    assert(timerList.size() == activeTimerSet.size());
     std::vector<Entry> expired;
     Entry sentry = std::make_pair(now, reinterpret_cast<Timer *>(UINTPTR_MAX));
     auto it = timerList.lower_bound(sentry);
@@ -113,6 +119,12 @@ std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now) {
     std::copy(timerList.begin(), it, back_inserter(expired));
     timerList.erase(timerList.begin(), it);
 
+    BOOST_FOREACH(Entry entry, expired) {
+                    ActiveTimer timer(entry.second, entry.second->getSequence());
+                    auto n = activeTimerSet.erase(timer);
+                    assert(n == 1);
+                }
+    assert(timerList.size() == activeTimerSet.size());
     return expired;
 }
 
@@ -120,7 +132,8 @@ void TimerQueue::reset(const std::vector<Entry> &expired, Timestamp now) {
     Timestamp nextExpire;
 
     for (const auto &it: expired) {
-        if (it.second->isRepeat()) {
+        ActiveTimer timer(it.second, it.second->getSequence());
+        if (it.second->isRepeat() && cancelingTimerSet.find(timer) == cancelingTimerSet.end()) {
             it.second->restart(now);
             insert(it.second);
         } else {
@@ -148,5 +161,25 @@ bool TimerQueue::insert(Timer *timer) {
     std::pair<TimerList::iterator, bool> result = timerList.insert(std::make_pair(when, timer));
     assert(result.second);
     return earliestChanged;
+}
+
+void TimerQueue::cancel(TimerId timerId) {
+    loop->runInLoop(boost::bind(&TimerQueue::cancelInLoop, this, timerId));
+}
+
+void TimerQueue::cancelInLoop(TimerId timerId) {
+    loop->assertInLoopThread();
+    assert(timerList.size() == activeTimerSet.size());
+    ActiveTimer timer(timerId.timer, timerId.sequence);
+    auto it = activeTimerSet.find(timer);
+    if (it != activeTimerSet.end()) {
+        auto n = timerList.erase(Entry(it->first->getExpirationTimestamp(), it->first));
+        assert(n == 1);
+        delete it->first;
+        activeTimerSet.erase(it);
+    } else if (callingExpiredTimers) {
+        cancelingTimerSet.insert(timer);
+    }
+    assert(timerList.size() == activeTimerSet.size());
 }
 

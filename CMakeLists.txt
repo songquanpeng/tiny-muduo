@@ -24,7 +24,8 @@ set(SOURCES
         muduo/TcpServer.cpp
         muduo/TcpConnection.cpp
         muduo/Buffer.cpp
-        muduo/EventLoopThreadPool.cpp)
+        muduo/EventLoopThreadPool.cpp
+        muduo/Connector.cpp)
 
 add_executable(test1 test1.cpp ${SOURCES})
 target_link_libraries(test1 pthread)
@@ -48,3 +49,5 @@ add_executable(test10 test10.cpp ${SOURCES})
 target_link_libraries(test10 pthread)
 add_executable(test11 test11.cpp ${SOURCES})
 target_link_libraries(test11 pthread)
+add_executable(test12 test12.cpp ${SOURCES})
+target_link_libraries(test12 pthread)

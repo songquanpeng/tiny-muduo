@@ -12,11 +12,14 @@ namespace muduo {
 
     class TimerId : public muduo::copyable {
     public:
-        explicit TimerId(Timer *timer) : timer(timer) {
+        TimerId(Timer *timer = nullptr, int64_t seq = 0) : timer(timer), sequence(seq) {
         }
+
+        friend class TimerQueue;
 
     private:
         Timer *timer;
+        int64_t sequence;
     };
 }
 

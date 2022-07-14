@@ -38,8 +38,12 @@ namespace muduo {
         // TODO: typedef std::pair<Timestamp, std::unique_ptr<Timer>> Entry;
         typedef std::pair<Timestamp, Timer*> Entry;
         typedef std::set<Entry> TimerList;
+        typedef std::pair<Timer*, int64_t> ActiveTimer;
+        typedef std::set<ActiveTimer > ActiveTimerSet;
 
         void addTimerInLoop(Timer* timer);
+
+        void cancelInLoop(TimerId timerId);
 
         // Called when timerfd alarms
         void handleRead();
@@ -56,7 +60,9 @@ namespace muduo {
         Channel timerfdChannel;
         // Sorted by expiration
         TimerList timerList;
-
+        ActiveTimerSet activeTimerSet;
+        ActiveTimerSet cancelingTimerSet;
+        bool callingExpiredTimers;
     };
 }
 
