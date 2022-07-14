@@ -26,7 +26,8 @@ set(SOURCES
         muduo/Buffer.cpp
         muduo/EventLoopThreadPool.cpp
         muduo/Connector.cpp
-        muduo/TcpClient.cpp)
+        muduo/TcpClient.cpp
+        muduo/EPoller.cpp)
 
 add_executable(test1 test1.cpp ${SOURCES})
 target_link_libraries(test1 pthread)
