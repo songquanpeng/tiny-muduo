@@ -152,14 +152,27 @@ void TimerQueue::reset(const std::vector<Entry> &expired, Timestamp now) {
 }
 
 bool TimerQueue::insert(Timer *timer) {
+    loop->assertInLoopThread();
+    assert(timerList.size() == activeTimerSet.size());
     bool earliestChanged = false;  // will the new added timer be the new first timer to alert?
     Timestamp when = timer->getExpirationTimestamp();
     auto it = timerList.begin();
     if (it == timerList.end() || when < it->first) {
         earliestChanged = true;
     }
-    std::pair<TimerList::iterator, bool> result = timerList.insert(std::make_pair(when, timer));
-    assert(result.second);
+    {
+        std::pair<TimerList::iterator, bool> result
+                = timerList.insert(Entry(when, timer));
+        assert(result.second);
+        (void) result;
+    }
+    {
+        std::pair<ActiveTimerSet::iterator, bool> result
+                = activeTimerSet.insert(ActiveTimer(timer, timer->getSequence()));
+        assert(result.second);
+        (void) result;
+    }
+    assert(timerList.size() == activeTimerSet.size());
     return earliestChanged;
 }
 
